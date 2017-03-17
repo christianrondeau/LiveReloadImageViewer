@@ -9,8 +9,8 @@ namespace LiveReloadImageViewer
 	public partial class MainForm : Form
 	{
 		private string _watchedFile;
-		private const int MaxTries = 3;
-		private const int MillisecondsBetweenRetries = 500;
+		private const int MaxTries = 5;
+		private const int MillisecondsBetweenRetries = 200;
 
 		public MainForm()
 		{
@@ -22,7 +22,7 @@ namespace LiveReloadImageViewer
 			ShowImage(file, true);
 
 			_fileSystemWatcher.EnableRaisingEvents = false;
-			_watchedFile = Path.GetFileName(file);
+			_watchedFile = file;
 			_fileSystemWatcher.Path = Path.GetDirectoryName(file);
 			_fileSystemWatcher.Filter = $"*{Path.GetExtension(file)}";
 			_fileSystemWatcher.EnableRaisingEvents = true;
@@ -64,15 +64,15 @@ namespace LiveReloadImageViewer
 
 		private void OnFileChanged(object sender, FileSystemEventArgs e)
 		{
-			if (Path.GetFileName(e.FullPath) == _watchedFile)
+			if (Path.GetFileName(e.FullPath) == Path.GetFileName(_watchedFile))
 				ShowImage(e.FullPath, false);
 		}
 
 		private void OnFileRenamed(object sender, RenamedEventArgs e)
 		{
-			if (Path.GetFileName(e.OldFullPath) == _watchedFile)
+			if (Path.GetFileName(e.OldFullPath) == Path.GetFileName(_watchedFile))
 				ShowImage(null, false);
-			else if (Path.GetFileName(e.FullPath) == _watchedFile)
+			else if (Path.GetFileName(e.FullPath) == Path.GetFileName(_watchedFile))
 				ShowImage(e.FullPath, false);
 		}
 
@@ -86,14 +86,14 @@ namespace LiveReloadImageViewer
 					{
 						_pictureBox.ImageLocation = file;
 						var text = initial ? "opened" : "updated";
-						_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToShortTimeString()}";
+						_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToLongTimeString()}";
 					}
 				}
 				else
 				{
 					_pictureBox.Image = null;
 					var text = initial ? "not found" : "deleted";
-					_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToShortTimeString()}";
+					_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToLongTimeString()}";
 				}
 			}
 			catch (Exception exc)
@@ -108,7 +108,8 @@ namespace LiveReloadImageViewer
 			{
 				try
 				{
-					using (var inputStream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.None))
+					Thread.Sleep(MillisecondsBetweenRetries);
+					using (var inputStream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 						if (inputStream.Length > 0)
 							return true;
 				}
@@ -116,7 +117,6 @@ namespace LiveReloadImageViewer
 				{
 					_toolStripStatusLabelInfo.Text = $@"File could not be loaded: {exc.Message}";
 					Update();
-					Thread.Sleep(MillisecondsBetweenRetries);
 				}
 			}
 			return false;
@@ -138,6 +138,8 @@ namespace LiveReloadImageViewer
 			if (e.KeyCode == Keys.O)
 				OpenFile();
 
+			if (e.KeyCode == Keys.F5)
+				ListenAndShow(_watchedFile);
 		}
 	}
 }

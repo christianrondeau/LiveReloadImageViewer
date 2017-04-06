@@ -49,11 +49,11 @@ namespace LiveReloadImageViewer
 			{
 				var file = ((string[])e.Data.GetData(DataFormats.FileDrop)).First();
 				ListenAndShow(file);
-				_toolStripStatusLabelInfo.Text = $@"File dropped: {file}";
+				UpdateStatus($@"File dropped: {file}");
 			}
 			else
 			{
-				_toolStripStatusLabelInfo.Text = @"Invalid dropped file";
+				UpdateStatus(@"Invalid dropped file");
 			}
 		}
 
@@ -86,19 +86,19 @@ namespace LiveReloadImageViewer
 					{
 						_pictureBox.ImageLocation = file;
 						var text = initial ? "opened" : "updated";
-						_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToLongTimeString()}";
+						UpdateStatus($@"File {text}: {DateTime.Now.ToLongTimeString()}", Path.GetFileName(file));
 					}
 				}
 				else
 				{
 					_pictureBox.Image = null;
 					var text = initial ? "not found" : "deleted";
-					_toolStripStatusLabelInfo.Text = $@"File {text}: {DateTime.Now.ToLongTimeString()}";
+					UpdateStatus($@"File {text}: {DateTime.Now.ToLongTimeString()}", Path.GetFileName(file));
 				}
 			}
 			catch (Exception exc)
 			{
-				_toolStripStatusLabelInfo.Text = $@"Error {exc.Message}";
+				UpdateStatus($@"Error {exc.Message}", Path.GetFileName(file));
 			}
 		}
 
@@ -115,7 +115,7 @@ namespace LiveReloadImageViewer
 				}
 				catch (IOException exc)
 				{
-					_toolStripStatusLabelInfo.Text = $@"File could not be loaded: {exc.Message}";
+					UpdateStatus($@"File could not be loaded: {exc.Message}", Path.GetFileName(file));
 					Update();
 				}
 			}
@@ -125,9 +125,13 @@ namespace LiveReloadImageViewer
 		private void OnPictureLoaded(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
 		{
 			if (e.Error != null)
-			{
-				_toolStripStatusLabelInfo.Text = $@"File error: {e.Error.Message}";
-			}
+				UpdateStatus($@"File error: {e.Error.Message}");
+		}
+
+		private void UpdateStatus(string message, string filename = null)
+		{
+			_toolStripStatusLabelFilename.Text = filename ?? "(No File Opened)";
+			_toolStripStatusLabelInfo.Text = message;
 		}
 
 		private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -140,6 +144,18 @@ namespace LiveReloadImageViewer
 
 			if (e.KeyCode == Keys.F5)
 				ListenAndShow(_watchedFile);
+		}
+
+		private void _toolStripMenuItem100_Click(object sender, EventArgs e)
+		{
+			_toolStripDropDownButtonZoomMode.Text = ((ToolStripMenuItem) sender).Text;
+			_pictureBox.SizeMode = PictureBoxSizeMode.CenterImage;
+		}
+
+		private void _toolStripMenuItemFit_Click(object sender, EventArgs e)
+		{
+			_toolStripDropDownButtonZoomMode.Text = ((ToolStripMenuItem) sender).Text;
+			_pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
 		}
 	}
 }
